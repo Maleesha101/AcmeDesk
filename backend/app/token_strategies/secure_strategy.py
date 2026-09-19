@@ -71,7 +71,7 @@ class SecureTokenStrategy(TokenStrategy):
         return 256.0
 
     def recommended_usage(self) -> str:
-        "PRODUCTION — use this for real password reset tokens"
+        return "PRODUCTION — use this for real password reset tokens"
 
     def _alphabet_name(self) -> str:
         return "Base64URL (A-Z, a-z, 0-9, -, _)"
