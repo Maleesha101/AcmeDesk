@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: acmedesk-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-acmedesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-acmedesk_lab_password}
+      POSTGRES_DB: ${POSTGRES_DB:-acmedesk}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-acmedesk} -d ${POSTGRES_DB:-acmedesk}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - acmedesk-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acmedesk-backend
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://acmedesk:acmedesk_lab_password@db:5432/acmedesk}
+      - SECRET_KEY=${SECRET_KEY:-lab_secret_key_change_in_production_32_chars_min}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
+      - TOKEN_EXPIRY_MINUTES=${TOKEN_EXPIRY_MINUTES:-15}
+      - TOKEN_SINGLE_USE=${TOKEN_SINGLE_USE:-true}
+      - LAB_MODE=${LAB_MODE:-true}
+      - LAB_INSTRUCTOR_MODE=${LAB_INSTRUCTOR_MODE:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - acmedesk-network
+    restart: unless-stopped
+    # Expose backend port only for debugging (not used in production flow)
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: acmedesk-nginx
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./backend/app/static:/var/www/static:ro
+    depends_on:
+      - backend
+    networks:
+      - acmedesk-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  acmedesk-network:
+    driver: bridge
