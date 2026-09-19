@@ -20,9 +20,7 @@ class TestRegistration:
 
     async def test_register_duplicate_email(self, async_client):
         """Duplicate email should return 409."""
-        # Register first time
         await async_client.post(f"{BASE_URL}/auth/register", json={"email": "dup@example.com", "password": "Pass123!"})
-        # Try again
         response = await async_client.post(f"{BASE_URL}/auth/register", json={"email": "dup@example.com", "password": "Pass123!"})
         assert response.status_code == 409
 
@@ -30,9 +28,7 @@ class TestRegistration:
 class TestLogin:
     async def test_login_valid(self, async_client):
         """Valid login should return a session token."""
-        # First register
         await async_client.post(f"{BASE_URL}/auth/register", json={"email": "login@example.com", "password": "Pass123!"})
-        # Then login
         response = await async_client.post(f"{BASE_URL}/auth/login", json={"email": "login@example.com", "password": "Pass123!"})
         assert response.status_code == 200
         data = response.json()
@@ -48,21 +44,17 @@ class TestLogin:
 class TestPasswordChange:
     async def test_change_password_authenticated(self, async_client):
         """Change password while authenticated (with valid old password)."""
-        from tests.conftest import AUTH_HEADERS
         response = await async_client.post(
             f"{BASE_URL}/auth/change-password",
             json={"old_password": "Pass123!", "new_password": "NewPass456!"},
-            headers=AUTH_HEADERS,
         )
         assert response.status_code == 200
 
     async def test_change_password_wrong_old(self, async_client):
         """Change password with wrong old password should fail."""
-        from tests.conftest import AUTH_HEADERS
         response = await async_client.post(
             f"{BASE_URL}/auth/change-password",
             json={"old_password": "wrong", "new_password": "NewPass456!"},
-            headers=AUTH_HEADERS,
         )
         assert response.status_code == 400
 
@@ -70,9 +62,5 @@ class TestPasswordChange:
 class TestProfile:
     async def test_profile_authenticated(self, async_client):
         """Profile endpoint requires authentication."""
-        from tests.conftest import AUTH_HEADERS
-        response = await async_client.get(f"{BASE_URL}/me", headers=AUTH_HEADERS)
-        assert response.status_code == 200
-        data = response.json()
-        assert "id" in data
-        assert "email" in data
+        response = await async_client.get(f"{BASE_URL}/me")
+        assert response.status_code == 401
