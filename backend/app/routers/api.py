@@ -1,16 +1,14 @@
 """
 Non-auth API endpoints: profile, settings, etc.
 """
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..auth import get_user_by_id
 from ..db import get_db
-from ..models import User
-from ..schemas import MessageResponse, UserProfile
+from ..schemas import UserProfile
 from .deps import get_current_user
+
+router = APIRouter()
 
 router = APIRouter()
 
