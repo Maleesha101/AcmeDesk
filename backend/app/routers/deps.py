@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..auth import verify_session, Session as SessionModel
+from ..auth import verify_session
 from ..config import settings
 from ..db import get_db
 from ..models import Session
