@@ -124,5 +124,5 @@ async def get_valid_token(
         "created_at": row.created_at,
         "expires_at": row.expires_at,
         "used_at": row.used_at,
-        "metadata": row.metadata,
+        "metadata": row.token_metadata,
     }

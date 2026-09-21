@@ -41,7 +41,7 @@ class PasswordResetToken(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     used_at = Column(DateTime(timezone=True), nullable=True)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    token_metadata = Column(JSONB, nullable=False, default=dict)
 
     user = relationship("User", back_populates="reset_tokens")
 

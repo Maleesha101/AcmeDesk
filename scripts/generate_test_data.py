@@ -65,7 +65,7 @@ async def generate(email: str, strategy_name: str, count: int):
                 token_hash=token_hash,
                 strategy=strategy_name,
                 expires_at=token_expiry(),
-                metadata={"token_length": len(raw_token)},
+                token_metadata={"token_length": len(raw_token)},
             )
             db.add(reset_token)
 

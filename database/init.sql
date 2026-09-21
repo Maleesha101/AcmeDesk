@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
     used_at TIMESTAMPTZ,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    token_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     CONSTRAINT uq_password_reset_tokens_hash UNIQUE (token_hash)
 );
 

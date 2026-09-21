@@ -70,7 +70,7 @@ async def _create_reset_token(
         token_hash=token_hash,
         strategy=strategy,
         expires_at=expires,
-        metadata={"token_length": len(raw_token)},
+        token_metadata={"token_length": len(raw_token)},
     )
     db.add(reset_token)
     await db.flush()
