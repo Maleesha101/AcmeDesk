@@ -3,6 +3,7 @@ AcmeDesk Token Security Lab - FastAPI Application
 """
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Request, Response
@@ -14,6 +15,11 @@ from starlette.responses import JSONResponse
 
 from .config import settings
 from .db import engine, init_db
+
+# Resolve static directory relative to this file
+BASE_DIR = Path(__file__).resolve().parent  # /app/app
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "static"
 
 # Configure logging
 logging.basicConfig(
@@ -74,10 +80,10 @@ app.include_router(api.router, prefix="/api", tags=["api"])
 app.include_router(user.router, prefix="/api", tags=["user"])
 
 # Mount static files (frontend)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Templates
-templates = Jinja2Templates(directory="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 @app.get("/health")
