@@ -26,7 +26,7 @@ from ..schemas import (
 )
 from .deps import get_current_user
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 
 @router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)

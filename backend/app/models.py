@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    ForeignKey,
     Integer,
     String,
     Text,
@@ -35,7 +36,7 @@ class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     token_hash = Column(String(255), nullable=False, unique=True, index=True)
     strategy = Column(String(50), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -50,7 +51,7 @@ class LabTokenSample(Base):
     __tablename__ = "lab_token_samples"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     strategy = Column(String(50), nullable=False, index=True)
     token = Column(String(512), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -62,7 +63,7 @@ class LabCounter(Base):
     __tablename__ = "lab_counters"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     counter = Column(Integer, nullable=False, default=0)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
@@ -73,7 +74,7 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     session_token_hash = Column(String(255), nullable=False, unique=True, index=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     expires_at = Column(DateTime(timezone=True), nullable=False)
