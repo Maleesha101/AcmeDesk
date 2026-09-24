@@ -2,7 +2,6 @@
 Pytest configuration and shared fixtures for AcmeDesk tests.
 """
 import asyncio
-import json
 import os
 import sys
 
@@ -14,11 +13,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select as sa_select
 
-from app.db import Base, engine as app_engine
+from app.db import Base
 from app.models import User, LabTokenSample, PasswordResetToken
-from app.auth import hash_password, create_session, hash_token
+from app.auth import hash_password, create_session
 from app.token_strategies import get_strategy, list_strategies
 
 DATABASE_URL = os.getenv(
@@ -34,16 +34,10 @@ TEST_PASSWORD = "TestPass123!"
 TEST_LOGIN_HEADERS = {"Authorization": "Bearer test-token-123"}
 TEST_LAB_HEADERS = {"X-Lab-Mode": "true"}
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Provide a session-scoped event loop."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+BASE_URL = os.getenv("TEST_BASE_URL", "http://localhost:8000")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def test_engine():
     """Create test database engine and tables."""
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -58,9 +52,9 @@ async def test_engine():
 @pytest_asyncio.fixture(scope="function")
 async def async_client(test_engine):
     """Create a test HTTP client with authenticated session."""
-    async with httpx.AsyncClient(base_url="http://localhost:8080", timeout=30.0) as client:
+    async with httpx.AsyncClient(base_url=BASE_URL, timeout=30.0) as client:
         # Ensure user exists in database
-        async with sessionmaker(test_engine, class_=sessionmaker, expire_on_commit=False)() as session:
+        async with sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)() as session:
             result = await session.execute(sa_select(User).where(User.email == TEST_EMAIL))
             user = result.scalar_one_or_none()
             if not user:
@@ -79,7 +73,7 @@ async def async_client(test_engine):
 async def async_user_registered(async_client):
     """Ensure a separate test user exists and is logged in."""
     email = f"registered_{os.getpid()}_{id(async_client)}@example.com"
-    async with sessionmaker(test_engine, class_=sessionmaker, expire_on_commit=False)() as session:
+    async with sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)() as session:
         result = await session.execute(sa_select(User).where(User.email == email))
         user = result.scalar_one_or_none()
         if not user:
@@ -93,11 +87,11 @@ async def async_user_registered(async_client):
 async def valid_token_for_reset(async_client, async_user_registered):
     """Create and return a valid secure reset token."""
     email = async_user_registered if async_user_registered else TEST_EMAIL
-    await async_client.post(f"{TEST_EMAIL}/auth/register", json={"email": email, "password": TEST_PASSWORD})
-    await async_client.post(f"{TEST_EMAIL}/auth/forgot-password", json={"email": email, "strategy": "secure"})
+    await async_client.post(f"{BASE_URL}/api/auth/register", json={"email": email, "password": TEST_PASSWORD})
+    await async_client.post(f"{BASE_URL}/lab/forgot-password", json={"email": email, "strategy": "secure"})
 
     # Get the token from the database
-    async with sessionmaker(test_engine, class_=sessionmaker, expire_on_commit=False)() as session:
+    async with sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)() as session:
         result = await session.execute(
             sa_select(PasswordResetToken)
             .where(PasswordResetToken.user_id == (
@@ -107,8 +101,7 @@ async def valid_token_for_reset(async_client, async_user_registered):
         )
         token_record = result.scalar_one_or_none()
         assert token_record is not None
-        # Return the token hash - we need the actual token, which is in lab samples for vulnerable strategies
-        # For secure strategy, we need to regenerate
+        # For the secure strategy we regenerate the token from the same source
         strategy = get_strategy("secure")
         raw_token = strategy.generate(user_id=token_record.user_id, email=email)
     return raw_token
@@ -120,7 +113,7 @@ async def lab_headers():
     return {"X-Lab-Mode": "true"}
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def valid_payload_timestamp():
     """Return payload for timestamp strategy forgot password."""
     return {"email": "timestamp@example.com", "strategy": "timestamp"}
