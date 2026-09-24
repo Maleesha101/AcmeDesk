@@ -31,6 +31,7 @@ def extract_token_from_mailbox(mailbox_response):
 
 
 class TestForgotPassword:
+    @pytest.mark.asyncio
     async def test_forgot_password_timestamp(self, async_client):
         """Password reset request accepts a strategy parameter."""
         await async_client.post(f"{BASE_URL}/auth/register", json={"email": "reset1@example.com", "password": "Pass123!"})
@@ -41,7 +42,7 @@ class TestForgotPassword:
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
-
+    @pytest.mark.asyncio
     async def test_forgot_password_nonexistent_user(self, async_client):
         """Forgot password for unknown user should still return success (email enumeration protection)."""
         response = await async_client.post(
@@ -53,6 +54,7 @@ class TestForgotPassword:
 
 
 class TestMailbox:
+    @pytest.mark.asyncio
     async def test_mailbox_load(self, async_client):
         """Mailbox should show reset links for the user's tokens."""
         email = "mailbox1@example.com"
@@ -65,8 +67,9 @@ class TestMailbox:
 
 
 class TestValidateToken:
+    @pytest.mark.asyncio
     async def test_validate_valid_token(self, async_client):
-        """GET /api/auth/validate should accept a valid token without consuming it."""
+        """GET /lab/validate should accept a valid token without consuming it."""
         email = "validate1@example.com"
         await async_client.post(f"{BASE_URL}/auth/register", json={"email": email, "password": "Pass123!"})
         await async_client.post(f"{BASE_URL}/auth/forgot-password", json={"email": email, "strategy": "secure"})
@@ -79,7 +82,7 @@ class TestValidateToken:
         assert response.status_code == 200
         data = response.json()
         assert data["valid"] is True
-
+    @pytest.mark.asyncio
     async def test_validate_unknown_token(self, async_client):
         """Non-existent token should return invalid."""
         response = await async_client.get(
@@ -89,7 +92,7 @@ class TestValidateToken:
         assert response.status_code == 200
         data = response.json()
         assert data["valid"] is False
-
+    @pytest.mark.asyncio
     async def test_validate_token_does_not_consume(self, async_client):
         """Validation (GET) must not mark the token as used."""
         email = "validate2@example.com"
@@ -106,8 +109,9 @@ class TestValidateToken:
 
 
 class TestResetPassword:
+    @pytest.mark.asyncio
     async def test_reset_password_valid(self, async_client):
-        """POST /api/auth/reset-password with valid token should succeed."""
+        """POST /lab/reset-password with valid token should succeed."""
         email = "reset_valid@example.com"
         await async_client.post(f"{BASE_URL}/auth/register", json={"email": email, "password": "Pass123!"})
         await async_client.post(f"{BASE_URL}/auth/forgot-password", json={"email": email, "strategy": "secure"})
@@ -121,8 +125,7 @@ class TestResetPassword:
         )
         assert response.status_code == 200
         assert "message" in response.json()
-
-
+    @pytest.mark.asyncio
     async def test_reset_password_unknown_token(self, async_client):
         """Unknown token should be rejected with 400."""
         response = await async_client.post(
@@ -130,8 +133,7 @@ class TestResetPassword:
             json={"token": "totally-bogus-token", "new_password": "NewPass789!"},
         )
         assert response.status_code == 400
-
-
+    @pytest.mark.asyncio
     async def test_reset_password_uses_token(self, async_client):
         """Token must be single-use: second reset with same token should fail."""
         email = "reset_twice@example.com"
@@ -157,6 +159,7 @@ class TestResetPassword:
 
 
 class TestStrategySwitching:
+    @pytest.mark.asyncio
     async def test_forgot_password_all_strategies(self, async_client):
         """All six strategies should be accepted in forgot-password."""
         for strategy in ["timestamp", "counter", "weak_prng", "structured", "predictable_hash", "secure"]:
@@ -167,7 +170,7 @@ class TestStrategySwitching:
                 json={"email": email, "strategy": strategy},
             )
             assert response.status_code == 200
-
+    @pytest.mark.asyncio
     async def test_invalid_strategy_rejected(self, async_client):
         """Invalid strategy should return 400."""
         await async_client.post(f"{BASE_URL}/auth/register", json={"email": "badstrat@example.com", "password": "Pass123!"})

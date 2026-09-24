@@ -7,6 +7,7 @@ import os
 import sys
 
 import pytest
+import pytest_asyncio
 import httpx
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
@@ -42,7 +43,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def test_engine():
     """Create test database engine and tables."""
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -54,7 +55,7 @@ async def test_engine():
     await engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def async_client(test_engine):
     """Create a test HTTP client with authenticated session."""
     async with httpx.AsyncClient(base_url="http://localhost:8080", timeout=30.0) as client:
@@ -74,7 +75,7 @@ async def async_client(test_engine):
         yield client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_user_registered(async_client):
     """Ensure a separate test user exists and is logged in."""
     email = f"registered_{os.getpid()}_{id(async_client)}@example.com"
@@ -88,7 +89,7 @@ async def async_user_registered(async_client):
     return email
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def valid_token_for_reset(async_client, async_user_registered):
     """Create and return a valid secure reset token."""
     email = async_user_registered if async_user_registered else TEST_EMAIL
@@ -113,7 +114,7 @@ async def valid_token_for_reset(async_client, async_user_registered):
     return raw_token
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def lab_headers():
     """Return headers for lab endpoints."""
     return {"X-Lab-Mode": "true"}
@@ -125,14 +126,14 @@ async def valid_payload_timestamp():
     return {"email": "timestamp@example.com", "strategy": "timestamp"}
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def lab_mode_disabled():
     """Context manager for testing with LAB_MODE disabled."""
     # Just a marker fixture; actual behavior depends on config
     return True
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def valid_token_headers():
     """Headers for token validation tests."""
     return {"Authorization": "Bearer valid-token"}
