@@ -34,7 +34,7 @@ TEST_PASSWORD = "TestPass123!"
 TEST_LOGIN_HEADERS = {"Authorization": "Bearer test-token-123"}
 TEST_LAB_HEADERS = {"X-Lab-Mode": "true"}
 
-BASE_URL = os.getenv("TEST_BASE_URL", "http://nginx:80")
+BASE_URL = os.getenv("TEST_BASE_URL", "http://localhost:8080")
 
 
 @pytest_asyncio.fixture(scope="function")
