@@ -110,7 +110,7 @@ Default seeded accounts (created by `scripts/seed_users.py`):
 
 ## 7. Token Strategies
 
-Six strategies are available. When requesting a password reset via `/api/auth/forgot-password`, the `strategy` field selects which one to use.
+Six strategies are available. When requesting a password reset via `/lab/forgot-password`, the `strategy` field selects which one to use.
 
 ### Strategy 1 — Long Timestamp Token
 
@@ -199,7 +199,7 @@ If the token is `SHA256("username")` (always the same value), its length is 64 b
 
 ### Step 3 — Create a reset request
 
-1. Navigate to `http://localhost:8080/forgot-password`
+1. Navigate to `http://localhost:8080/lab/forgot-password`
 2. Enter an email (e.g., `alice@example.com`)
 3. Select a **Strategy** from the dropdown
 4. Click "Send Reset Link" — Burp should intercept the POST request
@@ -209,7 +209,7 @@ If the token is `SHA256("username")` (always the same value), its length is 64 b
 After sending, open the **simulated mailbox**:
 1. Navigate to `http://localhost:8080/lab/mailbox/alice@example.com`
 2. Copy the reset link (contains `token=...`)
-3. Open a new tab and paste the URL — the token will be in `GET /reset?token=...`
+3. Open a new tab and paste the URL — the token will be in `GET /lab/reset?token=...`
 
 For Sequencer, we need a **validatable endpoint**. Use:
 
@@ -282,9 +282,9 @@ After running all six strategies, compare results. You should observe:
 
 **Task:** Generate 100 tokens using the timestamp strategy, capture them, and analyze in Burp Sequencer.
 
-1. Go to `http://localhost:8080/forgot-password`
+1. Go to `http://localhost:8080/lab/forgot-password`
 2. Set strategy to `timestamp`
-3. Generate 100 tokens (or use `POST /api/auth/forgot-password` 100 times)
+3. Generate 100 tokens (or use `POST /lab/forgot-password` 100 times)
 4. Open `GET /api/auth/validate?token=TOKEN` for each token in Sequencer
 5. Analyze the results
 

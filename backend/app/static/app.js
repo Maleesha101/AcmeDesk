@@ -94,25 +94,28 @@ async function refreshUser() {
 
 // ---- Templates ----
 function navHtml() {
-    const authLinks = state.user
-        ? `<a href="#" onclick="event.preventDefault(); navigate('/profile')">Profile</a>
-           <a href="#" onclick="event.preventDefault(); navigate('/lab/mailbox')">Mailbox</a>
-           <a href="#" onclick="event.preventDefault(); navigate('/lab/token-laboratory')">Token Laboratory</a>
-           <a href="#" onclick="event.preventDefault(); navigate('/lab/challenge')">Challenge</a>
-           <button onclick="logout()">Log out</button>`
-        : `<a href="#" onclick="event.preventDefault(); navigate('/login')">Log in</a>
-           <a href="#" onclick="event.preventDefault(); navigate('/register')">Register</a>`;
+    const labLinks = `
+        <a href="/lab" onclick="event.preventDefault(); navigate('/lab')">Lab overview</a>
+        <a href="/lab/token-laboratory" onclick="event.preventDefault(); navigate('/lab/token-laboratory')">Token lab</a>
+        <a href="/lab/mailbox" onclick="event.preventDefault(); navigate('/lab/mailbox')">Mailbox</a>
+        <a href="/lab/challenge" onclick="event.preventDefault(); navigate('/lab/challenge')">Challenge</a>`;
+    const accountLinks = state.user
+        ? `<a href="/" onclick="event.preventDefault(); navigate('/')">Workspace</a>
+           <a href="/profile" onclick="event.preventDefault(); navigate('/profile')">Account</a>
+           <button onclick="logout()">Sign out</button>`
+        : `<a href="/login" onclick="event.preventDefault(); navigate('/login')">Sign in</a>
+           <a class="btn btn-primary nav-cta" href="/register" onclick="event.preventDefault(); navigate('/register')">Create account</a>`;
+    const isLab = state.route.startsWith("/lab");
 
     return `
     <header>
         <div class="container nav">
-            <a href="#" class="brand" onclick="event.preventDefault(); navigate('/')">
+            <a href="/" class="brand" onclick="event.preventDefault(); navigate('/')">
                 <span class="brand-mark">A</span>
-                <span>AcmeDesk</span>
+                <span>AcmeDesk <small>${isLab ? "LEARNING LAB" : "SUPPORT DESK"}</small></span>
             </a>
             <nav class="nav-links">
-                ${authLinks}
-                <a href="#" onclick="event.preventDefault(); navigate('/forgot-password')">Reset Password</a>
+                ${isLab ? `<a href="/" onclick="event.preventDefault(); navigate('/')">Back to workspace</a>${labLinks}` : accountLinks}
             </nav>
         </div>
     </header>`;
@@ -126,130 +129,171 @@ function flashHtml() {
 }
 
 function layout(content, opts = {}) {
+    const isLab = state.route.startsWith("/lab");
     return `
+    <div class="app-frame ${isLab ? "lab-frame" : ""}">
     ${navHtml()}
     <main class="container page">
         ${flashHtml()}
         ${content}
-    </main>`;
+    </main>
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <span>AcmeDesk <span class="text-muted">Customer support workspace</span></span>
+            ${isLab
+                ? `<a href="/" onclick="event.preventDefault(); navigate('/')">Return to workspace</a>`
+                : `<a href="/lab" onclick="event.preventDefault(); navigate('/lab')">Security learning lab</a>`}
+        </div>
+    </footer>
+    </div>`;
 }
 
 // ---- Pages ----
 function homePage() {
+    const firstName = state.user ? state.user.email.split("@")[0] : "there";
+    const accountLink = state.user
+        ? `<a class="btn btn-secondary" href="/profile" onclick="event.preventDefault(); navigate('/profile')">Account settings</a>`
+        : `<a class="btn btn-primary" href="/register" onclick="event.preventDefault(); navigate('/register')">Create your account</a>`;
     const content = `
-    <div class="hero">
-        <div class="page-header" style="margin-bottom: 40px;">
-            <span class="badge badge-lab">Interactive Security Lab</span>
-            <h1 style="margin-top: 16px;">Token Length ≠ Token Security</h1>
-            <p>A hands-on training lab demonstrating why a password-reset token's security comes from
-            <strong>unpredictability</strong>, not from how long it looks.</p>
-        </div>
-        <div class="grid-2" style="text-align: left;">
-            <div class="card">
-                <h3><span class="badge badge-vulnerable">Vulnerable Lab</span></h3>
-                <p class="mt-2">Explore five intentionally flawed token-generation strategies:</p>
-                <ul style="margin: 12px 0 0 20px;" class="text-muted">
-                    <li>Long timestamp tokens</li>
-                    <li>Sequential counters</li>
-                    <li>Weak PRNG (Mersenne Twister)</li>
-                    <li>Structured tokens with tiny entropy</li>
-                    <li>SHA-256 of predictable input</li>
-                </ul>
+    <div class="workspace-shell">
+        <aside class="workspace-sidebar">
+            <p class="sidebar-label">WORKSPACE</p>
+            <a class="workspace-link is-active" href="/" onclick="event.preventDefault(); navigate('/')"><span class="workspace-icon">I</span>Inbox</a>
+            ${state.user
+                ? `<a class="workspace-link" href="/profile" onclick="event.preventDefault(); navigate('/profile')"><span class="workspace-icon">A</span>Account</a>`
+                : `<a class="workspace-link" href="/login" onclick="event.preventDefault(); navigate('/login')"><span class="workspace-icon">A</span>Sign in</a>`}
+            <div class="sidebar-account">
+                <span class="presence-dot"></span>
+                <span>${state.user ? escapeHtml(state.user.email) : "AcmeDesk workspace"}</span>
             </div>
-            <div class="card">
-                <h3><span class="badge badge-secure">Secure Reference</span></h3>
-                <p class="mt-2">Compare against the correct implementation:</p>
-                <ul style="margin: 12px 0 0 20px;" class="text-muted">
-                    <li>Cryptographically secure random generation</li>
-                    <li>Hashed token storage</li>
-                    <li>Short expiration window</li>
-                    <li>One-time use</li>
-                    <li>Burp Suite Sequencer friendly</li>
-                </ul>
+        </aside>
+        <section class="workspace-main">
+            <div class="workspace-heading">
+                <div>
+                    <p class="eyebrow">CUSTOMER SUPPORT</p>
+                    <h1>Good to see you, ${escapeHtml(firstName)}</h1>
+                    <p class="text-muted">Your conversations and customer context, together in one place.</p>
+                </div>
+                ${accountLink}
             </div>
-        </div>
-        <div class="card" style="margin-top: 20px;">
-            <h4>Core Principle</h4>
-            <p style="margin-top: 8px;">A token's security is determined by the amount of <strong>unpredictable information</strong>
-            an attacker must guess, not by how long or visually complex the token appears.</p>
-            <p class="mt-2 text-muted">Use Burp Suite Sequencer to analyze samples from each strategy and discover the difference for yourself.</p>
-            <div class="flex gap-2 mt-4 flex-wrap">
-                <button class="btn btn-primary" onclick="navigate('/register')">Start Lab</button>
-                <button class="btn btn-secondary" onclick="navigate('/lab/token-laboratory')">Token Laboratory</button>
-                <button class="btn btn-secondary" onclick="navigate('/lab/challenge')">Challenge Mode</button>
-            </div>
-        </div>
+            <section class="inbox-panel" aria-labelledby="inbox-title">
+                <div class="inbox-toolbar">
+                    <div>
+                        <h2 id="inbox-title">Inbox</h2>
+                        <p class="text-muted">All conversations</p>
+                    </div>
+                    <span class="inbox-filter">All</span>
+                </div>
+                <div class="inbox-empty">
+                    <span class="empty-mark" aria-hidden="true">A</span>
+                    <h3>Your inbox is ready</h3>
+                    <p>Customer conversations will appear here when your workspace is connected.</p>
+                    ${state.user
+                        ? `<a class="text-link" href="/profile" onclick="event.preventDefault(); navigate('/profile')">View your account</a>`
+                        : `<div class="flex gap-2 flex-wrap justify-center">
+                               <a class="btn btn-primary" href="/register" onclick="event.preventDefault(); navigate('/register')">Create account</a>
+                               <a class="btn btn-secondary" href="/login" onclick="event.preventDefault(); navigate('/login')">Sign in</a>
+                           </div>`}
+                </div>
+            </section>
+        </section>
     </div>`;
     return layout(content);
 }
 
 function loginPage() {
     const content = `
-    <div class="auth-layout">
-        <div class="card">
-            <h3>Log in to AcmeDesk</h3>
+    <div class="auth-screen">
+        <section class="auth-context">
+            <p class="eyebrow">ACMEDESK / CUSTOMER SUPPORT</p>
+            <h1>Make room for the conversations that matter.</h1>
+            <p>Sign in to pick up where your team left off.</p>
+            <div class="auth-orbit" aria-hidden="true"><span>AD</span><i></i><i></i><i></i></div>
+        </section>
+        <section class="auth-panel">
+            <p class="auth-kicker">WELCOME BACK</p>
+            <h2>Sign in</h2>
+            <p class="text-muted">Enter your account details to continue.</p>
             <form id="login-form">
                 <div class="form-group">
                     <label for="login-email">Email</label>
-                    <input type="email" id="login-email" required placeholder="you@example.com">
+                    <input type="email" id="login-email" autocomplete="email" required placeholder="you@company.com">
                 </div>
                 <div class="form-group">
                     <label for="login-password">Password</label>
-                    <input type="password" id="login-password" required placeholder="••••••••">
+                    <input type="password" id="login-password" autocomplete="current-password" required placeholder="Your password">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Log in</button>
+                <button type="submit" class="btn btn-primary auth-submit">Sign in</button>
             </form>
-            <p class="text-muted mt-2">Need an account? <a href="#" onclick="event.preventDefault(); navigate('/register')">Register</a></p>
-            <p class="text-muted">Forgot your password? <a href="#" onclick="event.preventDefault(); navigate('/forgot-password')">Request a reset</a></p>
-        </div>
-        <div class="card">
-            <h3>Lab Accounts</h3>
-            <p class="text-muted">Use these seeded accounts to explore the password reset flow:</p>
-            <div class="mt-2" id="lab-accounts">
-                <p><code>alice@example.com</code> / <code>Password123!</code></p>
-                <p><code>bob@example.com</code> / <code>Password123!</code></p>
-                <p><code>admin@example.com</code> / <code>Password123!</code></p>
-            </div>
-            <p class="text-muted mt-2">These are local-only test accounts created by the lab's seed script.</p>
-        </div>
+            <p class="auth-switch">New to AcmeDesk? <a href="/register" onclick="event.preventDefault(); navigate('/register')">Create an account</a></p>
+            <a class="auth-secondary-link" href="/lab/forgot-password" onclick="event.preventDefault(); navigate('/lab/forgot-password')">Forgot your password?</a>
+        </section>
     </div>`;
     return layout(content);
 }
 
 function registerPage() {
     const content = `
-    <div class="auth-layout">
-        <div class="card">
-            <h3>Create an AcmeDesk account</h3>
+    <div class="auth-screen">
+        <section class="auth-context">
+            <p class="eyebrow">ACMEDESK / CUSTOMER SUPPORT</p>
+            <h1>Start with a clearer view of every customer.</h1>
+            <p>Create your account to open your AcmeDesk workspace.</p>
+            <div class="auth-orbit" aria-hidden="true"><span>AD</span><i></i><i></i><i></i></div>
+        </section>
+        <section class="auth-panel">
+            <p class="auth-kicker">GET STARTED</p>
+            <h2>Create your account</h2>
+            <p class="text-muted">Use your work email and choose a password.</p>
             <form id="register-form">
                 <div class="form-group">
                     <label for="register-email">Email</label>
-                    <input type="email" id="register-email" required placeholder="you@example.com">
+                    <input type="email" id="register-email" autocomplete="email" required placeholder="you@company.com">
                 </div>
                 <div class="form-group">
                     <label for="register-password">Password</label>
-                    <input type="password" id="register-password" required minlength="8" placeholder="At least 8 characters">
+                    <input type="password" id="register-password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+                <button type="submit" class="btn btn-primary auth-submit">Create account</button>
             </form>
-            <p class="text-muted mt-2">Already have an account? <a href="#" onclick="event.preventDefault(); navigate('/login')">Log in</a></p>
-        </div>
-        <div class="card">
-            <h3>Why register?</h3>
-            <p class="text-muted">Registration creates a local test account so you can exercise the complete password reset flow,
-            from request to mailbox to token validation.</p>
-            <p class="text-muted mt-2">Passwords are stored as bcrypt hashes, demonstrating that even the "secure" parts of the lab
-            follow production-style practices where appropriate.</p>
-        </div>
+            <p class="auth-switch">Already have an account? <a href="/login" onclick="event.preventDefault(); navigate('/login')">Sign in</a></p>
+        </section>
     </div>`;
     return layout(content);
 }
 
-function forgotPasswordPage() {
+function labHomePage() {
+    const content = `
+    <div class="page-header lab-page-header">
+        <span class="badge badge-lab">Learning Lab</span>
+        <h1>Token security, hands on</h1>
+        <p>Explore how reset-token design affects predictability, entropy, and resistance to attack.</p>
+    </div>
+    <div class="lab-entry-grid">
+        <a class="card lab-entry" href="/lab/token-laboratory" onclick="event.preventDefault(); navigate('/lab/token-laboratory')">
+            <span class="lab-entry-index">01</span><h2>Token laboratory</h2>
+            <p>Compare six token-generation strategies and inspect their security properties.</p>
+            <span class="text-link">Open laboratory</span>
+        </a>
+        <a class="card lab-entry" href="/lab/challenge" onclick="event.preventDefault(); navigate('/lab/challenge')">
+            <span class="lab-entry-index">02</span><h2>Challenge</h2>
+            <p>Classify token samples and identify which strategy uses a secure random generator.</p>
+            <span class="text-link">Start challenge</span>
+        </a>
+        <a class="card lab-entry" href="/lab/forgot-password" onclick="event.preventDefault(); navigate('/lab/forgot-password')">
+            <span class="lab-entry-index">03</span><h2>Password reset exercise</h2>
+            <p>Generate a reset token and inspect it in the simulated mailbox.</p>
+            <span class="text-link">Open exercise</span>
+        </a>
+    </div>`;
+    return layout(content);
+}
+
+function labForgotPasswordPage() {
     const content = `
     <div class="page-header">
         <span class="badge badge-lab">Password Reset Lab</span>
-        <h1 style="margin-top: 16px;">Forgot Password</h1>
+        <h1 style="margin-top: 16px;">Generate a reset token</h1>
         <p>Request a password reset link. Choose a token strategy to explore different generation weaknesses.</p>
     </div>
     <div class="grid-2">
@@ -287,12 +331,12 @@ function forgotPasswordPage() {
     return layout(content);
 }
 
-function resetPasswordPage() {
+function labResetPasswordPage() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token") || "";
     const content = `
     <div class="page-header">
-        <span class="badge badge-lab">Password Reset</span>
+        <span class="badge badge-lab">Password Reset Lab</span>
         <h1 style="margin-top: 16px;">Reset Your Password</h1>
         <p>Submit your password reset token and choose a new password.</p>
     </div>
@@ -316,26 +360,22 @@ function resetPasswordPage() {
 function profilePage() {
     const content = `
     <div class="page-header">
-        <span class="badge badge-lab">Account</span>
-        <h1 style="margin-top: 16px;">Your Profile</h1>
+        <span class="eyebrow">WORKSPACE SETTINGS</span>
+        <h1 style="margin-top: 16px;">Your account</h1>
     </div>
-    <div class="grid-2">
-        <div class="card">
-            <h3>Account Details</h3>
+    <div class="account-layout">
+        <section class="card">
+            <h2>Account details</h2>
             <div id="profile-details">
                 <p class="text-muted">Loading...</p>
             </div>
-        </div>
-        <div class="card">
-            <h3>Security Notes</h3>
-            <ul style="margin-left: 20px;" class="text-muted">
-                <li>Passwords are stored as bcrypt hashes</li>
-                <li>Sessions use opaque tokens stored server-side</li>
-                <li>Reset tokens are hashed in the database</li>
-                <li>Reset tokens expire after 15 minutes</li>
-                <li>Reset tokens are single-use</li>
-            </ul>
-        </div>
+        </section>
+        <section class="card account-workspace">
+            <p class="eyebrow">ACMEDESK</p>
+            <h2>Customer support workspace</h2>
+            <p class="text-muted">You are signed in and ready to return to your inbox.</p>
+            <a class="text-link" href="/" onclick="event.preventDefault(); navigate('/')">Back to inbox</a>
+        </section>
     </div>`;
     return layout(content);
 }
@@ -449,7 +489,7 @@ async function handleLogin(e) {
         });
         saveSession(data.access_token, data.user);
         setFlash("success", "Logged in successfully.");
-        navigate("/profile");
+        navigate("/");
     } catch (err) {
         setFlash("error", err.message);
         render();
@@ -467,7 +507,7 @@ async function handleRegister(e) {
         });
         saveSession(data.access_token, data.user);
         setFlash("success", "Account created. You are now logged in.");
-        navigate("/profile");
+        navigate("/");
     } catch (err) {
         setFlash("error", err.message);
         render();
@@ -576,7 +616,7 @@ function renderMailbox(entries) {
                 </div>
                 <div class="token-box mt-2">${escapeHtml(entry.token)}</div>
                 <div class="flex gap-2 mt-2 flex-wrap">
-                    <a class="btn btn-secondary" href="/reset?token=${encodeURIComponent(entry.token)}">Open Reset Page</a>
+                    <a class="btn btn-secondary" href="/lab/reset?token=${encodeURIComponent(entry.token)}">Open Reset Page</a>
                     <button class="btn btn-secondary" onclick="copyToken('${encodeURIComponent(entry.token)}')">Copy Token</button>
                 </div>
             </div>`).join("")}
@@ -664,14 +704,27 @@ function render() {
         case "/register":
             content = registerPage();
             break;
-        case "/forgot-password":
-            content = forgotPasswordPage();
-            break;
-        case "/reset":
-            content = resetPasswordPage();
-            break;
         case "/profile":
             content = profilePage();
+            break;
+        case "/lab":
+            content = labHomePage();
+            break;
+        case "/lab/forgot-password":
+            content = labForgotPasswordPage();
+            break;
+        case "/lab/reset":
+            content = labResetPasswordPage();
+            break;
+        case "/forgot-password":
+            history.replaceState({}, "", "/lab/forgot-password");
+            state.route = "/lab/forgot-password";
+            content = labForgotPasswordPage();
+            break;
+        case "/reset":
+            history.replaceState({}, "", `/lab/reset${window.location.search}`);
+            state.route = "/lab/reset";
+            content = labResetPasswordPage();
             break;
         case "/lab/mailbox":
             content = mailboxPage();
